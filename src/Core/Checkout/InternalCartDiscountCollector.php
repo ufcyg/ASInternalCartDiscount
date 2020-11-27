@@ -11,6 +11,7 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Checkout\Cart\Price\PercentagePriceCalculator;
 use Shopware\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
 use Shopware\Core\Checkout\Cart\Rule\LineItemRule;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
@@ -38,8 +39,13 @@ class InternalCartDiscountCollector implements CartProcessorInterface
         //check for customer group
         $allowedCustomerGroup = $this->systemConfigService->get('ASInternalCartDiscount.config.discountedCustomerGroup');
         $continue = false;
+
+        /** @var CustomerEntity $customerEntity */
+        $customerEntity = $context->getCustomer();
         foreach ($allowedCustomerGroup as $allowedGrp)
         {
+            if ($customerEntity === null)
+            {break;}
             if($allowedGrp === $context->getCustomer()->getGroupId())
             {$continue = true;}
         }
