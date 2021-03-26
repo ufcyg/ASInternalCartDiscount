@@ -31,7 +31,8 @@ class InternalCartDiscountCollector implements CartProcessorInterface
     public function process(CartDataCollection $data, Cart $original, Cart $toCalculate, SalesChannelContext $context, CartBehavior $behavior): void
     {
         $products = $this->getCartItems($toCalculate);
-
+        if(count($products) == 0)
+            return;
         if (!$this->systemConfigService->get('ASInternalCartDiscount.config.active') )
         {
             return;
