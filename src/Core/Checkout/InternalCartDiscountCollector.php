@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ASInternalCartDiscount\Core\Checkout;
 
@@ -31,10 +33,9 @@ class InternalCartDiscountCollector implements CartProcessorInterface
     public function process(CartDataCollection $data, Cart $original, Cart $toCalculate, SalesChannelContext $context, CartBehavior $behavior): void
     {
         $products = $this->getCartItems($toCalculate);
-        if(count($products) == 0)
+        if (count($products) == 0)
             return;
-        if (!$this->systemConfigService->get('ASInternalCartDiscount.config.active') )
-        {
+        if (!$this->systemConfigService->get('ASInternalCartDiscount.config.active')) {
             return;
         }
         //check for customer group
@@ -43,15 +44,17 @@ class InternalCartDiscountCollector implements CartProcessorInterface
 
         /** @var CustomerEntity $customerEntity */
         $customerEntity = $context->getCustomer();
-        foreach ($allowedCustomerGroup as $allowedGrp)
-        {
-            if ($customerEntity === null)
-            {break;}
-            if($allowedGrp === $context->getCustomer()->getGroupId())
-            {$continue = true;}
+        foreach ($allowedCustomerGroup as $allowedGrp) {
+            if ($customerEntity === null) {
+                break;
+            }
+            if ($allowedGrp === $context->getCustomer()->getGroupId()) {
+                $continue = true;
+            }
         }
-        if (!$continue)
-        {return;}
+        if (!$continue) {
+            return;
+        }
 
         $discountLineItem = $this->createDiscount('INTERNAL_DISCOUNT');
 
@@ -76,7 +79,7 @@ class InternalCartDiscountCollector implements CartProcessorInterface
     private function getCartItems(Cart $cart): LineItemCollection
     {
         return $cart->getLineItems();
-    }       
+    }
 
     private function createDiscount(string $name): LineItem
     {
