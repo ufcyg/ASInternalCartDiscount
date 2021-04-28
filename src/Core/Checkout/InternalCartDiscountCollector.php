@@ -16,6 +16,13 @@ use Shopware\Core\Checkout\Cart\Rule\LineItemRule;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Psr\Container\ContainerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 class InternalCartDiscountCollector implements CartProcessorInterface
 {
@@ -23,16 +30,39 @@ class InternalCartDiscountCollector implements CartProcessorInterface
     private $calculator;
     /** @var SystemConfigService $systemConfigService */
     private $systemConfigService;
+    /** @var ContainerInterface $container */
+    protected $container;
 
     public function __construct(PercentagePriceCalculator $calculator, SystemConfigService $systemConfigService)
     {
         $this->calculator = $calculator;
         $this->systemConfigService = $systemConfigService;
     }
+    /** @internal @required */
+    public function setContainer(ContainerInterface $container): ?ContainerInterface
+    {
+        $previous = $this->container;
+        $this->container = $container;
 
+        return $previous;
+    }
     public function process(CartDataCollection $data, Cart $original, Cart $toCalculate, SalesChannelContext $context, CartBehavior $behavior): void
     {
         $products = $this->getCartItems($toCalculate);
+        $cartExtension = $toCalculate->getExtensions();
+        $originalOrderID = $cartExtension['originalId']->getId();
+
+        $orderLineItemRepository = $this->container->get('order_line_item.repository');
+
+        $orderLineItems = $this->getFilteredEntitiesOfRepository($orderLineItemRepository, 'orderId', $originalOrderID, $context->getContext());
+        /** @var OrderLineItemEntity $orderLineItem */
+        foreach($orderLineItems as $orderLineItemID => $orderLineItem){
+            if($orderLineItem->getIdentifier() == 'INTERNAL_DISCOUNT'){
+                $orderLineItemRepository->delete([['id' => $orderLineItemID]], $context->getContext());
+            }
+        }
+
+
         if (count($products) == 0)
             return;
         if (!$this->systemConfigService->get('ASInternalCartDiscount.config.active')) {
@@ -55,8 +85,16 @@ class InternalCartDiscountCollector implements CartProcessorInterface
         if (!$continue) {
             return;
         }
-
-        $discountLineItem = $this->createDiscount('INTERNAL_DISCOUNT');
+        $discountLineItem = null;
+        /** @var LineItem $lineItem */
+        foreach ($products as $lineItemID => $lineItem) {
+            if ($lineItem->getLabel() == 'Internal customer discount') {
+                $discountLineItem = $lineItem;
+                break;
+            }
+        }
+        if($discountLineItem == null)
+            $discountLineItem = $this->createDiscount('INTERNAL_DISCOUNT');
 
         // declare price definition to define how this price is calculated
         $definition = new PercentagePriceDefinition(
@@ -89,7 +127,39 @@ class InternalCartDiscountCollector implements CartProcessorInterface
         $discountLineItem->setGood(false);
         $discountLineItem->setStackable(false);
         $discountLineItem->setRemovable(false);
-
+        
         return $discountLineItem;
+    }
+
+
+    public function getAllEntitiesOfRepository(EntityRepositoryInterface $repository, Context $context): ?EntitySearchResult
+    {
+        /** @var Criteria $criteria */
+        $criteria = new Criteria();
+        /** @var EntitySearchResult $result */
+        $result = $repository->search($criteria, $context);
+
+        return $result;
+    }
+    public function getFilteredEntitiesOfRepository(EntityRepositoryInterface $repository, string $fieldName, $fieldValue, Context $context): ?EntitySearchResult
+    {
+        /** @var Criteria $criteria */
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter($fieldName, $fieldValue));
+        /** @var EntitySearchResult $result */
+        $result = $repository->search($criteria, $context);
+
+        return $result;
+    }
+    public function entityExistsInRepositoryCk(EntityRepositoryInterface $repository, string $fieldName, $fieldValue, Context $context): bool
+    {
+        $criteria = new Criteria();
+
+        $criteria->addFilter(new EqualsFilter($fieldName, $fieldValue));
+
+        /** @var EntitySearchResult $searchResult */
+        $searchResult = $repository->search($criteria, $context);
+
+        return count($searchResult) != 0 ? true : false;
     }
 }

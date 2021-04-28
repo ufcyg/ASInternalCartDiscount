@@ -2,11 +2,11 @@
   "name": "as/internal-cart-discount",
   "description": "Skeleton plugin",
   "type": "shopware-platform-plugin",
-  "version": "v0.1.1",
+  "version": "v0.2.0",
   "license": "proprietary",
   "authors": [
     {
-        "name": "A&S PMO"
+      "name": "A&S PMO"
     }
   ],
   "autoload": {
