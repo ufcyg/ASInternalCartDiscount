@@ -17,6 +17,7 @@ use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Psr\Container\ContainerInterface;
+use Shopware\Core\Checkout\Cart\Order\IdStruct;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -50,8 +51,9 @@ class InternalCartDiscountCollector implements CartProcessorInterface
     {
         $products = $this->getCartItems($toCalculate);
         $cartExtension = $toCalculate->getExtensions();
-        $originalOrderID = $cartExtension['originalId']->getId();
-
+        $originalOrderIDStruct = $cartExtension['originalId'];
+        /** @var IdStruct $originalOrderIDStruct */
+        $originalOrderID = $originalOrderIDStruct->getId();
         $orderLineItemRepository = $this->container->get('order_line_item.repository');
 
         $orderLineItems = $this->getFilteredEntitiesOfRepository($orderLineItemRepository, 'orderId', $originalOrderID, $context->getContext());
