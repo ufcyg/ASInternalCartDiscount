@@ -51,6 +51,8 @@ class InternalCartDiscountCollector implements CartProcessorInterface
     {
         $products = $this->getCartItems($toCalculate);
         $cartExtension = $toCalculate->getExtensions();
+        if(!array_key_exists('originalId',$cartExtension))
+            return;
         $originalOrderIDStruct = $cartExtension['originalId'];
         /** @var IdStruct $originalOrderIDStruct */
         $originalOrderID = $originalOrderIDStruct->getId();
