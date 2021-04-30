@@ -51,21 +51,20 @@ class InternalCartDiscountCollector implements CartProcessorInterface
     {
         $products = $this->getCartItems($toCalculate);
         $cartExtension = $toCalculate->getExtensions();
-        if(!array_key_exists('originalId',$cartExtension))
-            return;
-        $originalOrderIDStruct = $cartExtension['originalId'];
-        /** @var IdStruct $originalOrderIDStruct */
-        $originalOrderID = $originalOrderIDStruct->getId();
-        $orderLineItemRepository = $this->container->get('order_line_item.repository');
+        if (array_key_exists('originalId', $cartExtension)) {
+            $originalOrderIDStruct = $cartExtension['originalId'];
+            /** @var IdStruct $originalOrderIDStruct */
+            $originalOrderID = $originalOrderIDStruct->getId();
+            $orderLineItemRepository = $this->container->get('order_line_item.repository');
 
-        $orderLineItems = $this->getFilteredEntitiesOfRepository($orderLineItemRepository, 'orderId', $originalOrderID, $context->getContext());
-        /** @var OrderLineItemEntity $orderLineItem */
-        foreach($orderLineItems as $orderLineItemID => $orderLineItem){
-            if($orderLineItem->getIdentifier() == 'INTERNAL_DISCOUNT'){
-                $orderLineItemRepository->delete([['id' => $orderLineItemID]], $context->getContext());
+            $orderLineItems = $this->getFilteredEntitiesOfRepository($orderLineItemRepository, 'orderId', $originalOrderID, $context->getContext());
+            /** @var OrderLineItemEntity $orderLineItem */
+            foreach ($orderLineItems as $orderLineItemID => $orderLineItem) {
+                if ($orderLineItem->getIdentifier() == 'INTERNAL_DISCOUNT') {
+                    $orderLineItemRepository->delete([['id' => $orderLineItemID]], $context->getContext());
+                }
             }
         }
-
 
         if (count($products) == 0)
             return;
@@ -97,7 +96,7 @@ class InternalCartDiscountCollector implements CartProcessorInterface
                 break;
             }
         }
-        if($discountLineItem == null)
+        if ($discountLineItem == null)
             $discountLineItem = $this->createDiscount('INTERNAL_DISCOUNT');
 
         // declare price definition to define how this price is calculated
@@ -131,7 +130,7 @@ class InternalCartDiscountCollector implements CartProcessorInterface
         $discountLineItem->setGood(false);
         $discountLineItem->setStackable(false);
         $discountLineItem->setRemovable(false);
-        
+
         return $discountLineItem;
     }
 
