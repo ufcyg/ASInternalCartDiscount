@@ -102,7 +102,6 @@ class InternalCartDiscountCollector implements CartProcessorInterface
         // declare price definition to define how this price is calculated
         $definition = new PercentagePriceDefinition(
             -100,
-            $context->getContext()->getCurrencyPrecision(),
             new LineItemRule(LineItemRule::OPERATOR_EQ, $products->getKeys())
         );
 
